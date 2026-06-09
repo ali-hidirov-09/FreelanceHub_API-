@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from .routers import api_router
+from fastapi.responses import RedirectResponse
+
 
 app = FastAPI(
     title="Freelance Hub API",
@@ -56,5 +58,9 @@ app = FastAPI(
     # openapi version
     openapi_version="3.1.0"
 )
+
+@app.get("/", include_in_schema=False)
+async def redirect_to_docs():
+    return RedirectResponse(url='/docs')
 
 app.include_router(api_router, prefix="/api/v1")
