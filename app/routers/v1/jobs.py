@@ -1,72 +1,146 @@
 from fastapi import APIRouter
 from fastapi.params import Query
+from pydantic import BaseModel, field_validator, ConfigDict, Field
+from pydantic.alias_generators import to_camel
+from typing import Annotated
+
 
 router = APIRouter()
 
+class BaseSchema(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+        extra='forbid'
+    )
 
-jobs = [
+PositiveInt = Annotated[int, Field(gt=0)]
+MinStr = Annotated[str, Field(min_length=2, max_length=20)]
+
+
+devs = [
     {
         "id": 1,
         "category":"IT",
-        "name":"Backend",
-        "experience": 2,
-        "about": "Bizga 2 yillik tajribaga ega middle python backend developer kerak. "
-                 "bilishi kk bo'lgan texnologiyalari:Django, DRF, Fast API, Python, Postgresql, Aiogram"
-     },
-    {
-        "id": 2,
-        "category":"IT",
-        "name":"Frontend",
-        "experience": 10,
-        "about": "Bizga 10 yillik tajribaga ega teamlead frontend developer kerak. "
-                 "bilishi kk bo'lgan texnologiyalari:React Native, Next.js, vue.js, Java script, type script, Tailwind"
-     },
-    {
-        "id": 3,
-        "category":"Biznes",
-        "name":"Leader",
-        "experience": 5,
-        "about": "Bizga 5 yillik tajribaga ega katta bizneslarni boshqara poladigan leader kerak. "
-                 "U odam Biznes haqida hamma narsani bilishi kerak"
-     },
-    {
-        "id": 4,
-        "category":"AI",
-        "name":"ML engineer",
+        "title": "Python",
+        "full_name":"Ali Khidirov",
         "experience": 1,
-        "about": "Bizga 1 yillik tajribaga ega strong junior ML engoineer kk. "
-                 "bilishi kk bo'lgan texnologiyalari:ML, Ai bilan ishlash, API, Deep laerning"
-     },
-    {
-        "id": 5,
-        "category":"Biznes",
-        "name":"Salesman",
-        "experience": 20,
-        "about": "Bizga 20 yillik tajribaga ega sotuvchi kerak. "
-                 "bilishi kerak: odamlar bilan muloqot va kassa da professional ishlash mahorati"
-
-     }
+        "salary": 600.0,
+        "description": "Men junior python developerman va kompaniya rivoji uchun hamma narsa qilishga tayyorman."
+    }
 ]
 
-@router.get("/search/")
-async def get_jobs(
-        keyword: str = Query(..., min_length=3),
-        category: str = Query(None, alias="job-category"),
-        experience:  int = Query(gt=0, lt=50)
-):
-    global jobs
-    keyword.lower()
-    try:
-        for i in jobs:
-            if i['about'].lower().find(keyword) and i['category'] == category and i['experience'] == experience:
-                return i
-            elif i['about'].lower().find(keyword) and i['experience'] == experience:
-                return i
-    except Exception as e:
-        return {"xatolik": e}
+class Job(BaseSchema):
+    category: MinStr
+    title: MinStr
+    full_name: MinStr
+    experience: int = Field(..., ge=0)
+    salary: float = Field(..., ge=0.0)
+    description: str = Field(min_length=10)
 
-    return {
-        "message": "Bunday kasb topilmadi"
-    }
+    @field_validator('title')
+    @classmethod
+    def is_title_has_python(cls, tit:str):
+        if "python" not in tit.lower():
+            raise  ValueError("Biz faqat Pythonchilarni yaxshi ko'ramiz!")
+        return tit.title()
 
 
+    @field_validator('full_name')
+    @classmethod
+    def full_name_must_be_alpha(cls, s:str):
+        title = s.replace(" ", "")
+        if not title.isalpha():
+            raise ValueError("Ism faqat xarflardan iborat bo'lishi kerak")
+        return s.title()
+
+    @field_validator('salary')
+    @classmethod
+    def salary_must_be_juft(cls, salar:float):
+        sala = int(salar)
+        if sala % 2 != 0:
+            raise ValueError("Faqat juft son kiritish mumkin")
+        return salar
+
+
+
+
+@router.post('/dev_create')
+async def dev_create(job: Job):
+    global devs
+    job_data = job.model_dump()
+    devs.append(job_data)
+    print(devs)
+    return {"message": "Muvaffaqiyatli yaratildi",
+            "data": job_data}
+
+
+
+
+
+
+
+
+
+# jobs = [
+#     {
+#         "id": 1,
+#         "category":"IT",
+#         "name":"Backend",
+#         "experience": 2,
+#         "about": "Bizga 2 yillik tajribaga ega middle python backend developer kerak. "
+#                  "bilishi kk bo'lgan texnologiyalari:Django, DRF, Fast API, Python, Postgresql, Aiogram"
+#      },
+#     {
+#         "id": 2,
+#         "category":"IT",
+#         "name":"Frontend",
+#         "experience": 10,
+#         "about": "Bizga 10 yillik tajribaga ega teamlead frontend developer kerak. "
+#                  "bilishi kk bo'lgan texnologiyalari:React Native, Next.js, vue.js, Java script, type script, Tailwind"
+#      },
+#     {
+#         "id": 3,
+#         "category":"Biznes",
+#         "name":"Leader",
+#         "experience": 5,
+#         "about": "Bizga 5 yillik tajribaga ega katta bizneslarni boshqara poladigan leader kerak. "
+#                  "U odam Biznes haqida hamma narsani bilishi kerak"
+#      },
+#     {
+#         "id": 4,
+#         "category":"AI",
+#         "name":"ML engineer",
+#         "experience": 1,
+#         "about": "Bizga 1 yillik tajribaga ega strong junior ML engoineer kk. "
+#                  "bilishi kk bo'lgan texnologiyalari:ML, Ai bilan ishlash, API, Deep laerning"
+#      },
+#     {
+#         "id": 5,
+#         "category":"Biznes",
+#         "name":"Salesman",
+#         "experience": 20,
+#         "about": "Bizga 20 yillik tajribaga ega sotuvchi kerak. "
+#                  "bilishi kerak: odamlar bilan muloqot va kassa da professional ishlash mahorati"
+#
+#      }
+# ]
+
+
+# @router.get("/search/")
+# async def get_jobs(
+#         keyword: str = Query(..., min_length=3),
+#         category: str = Query(None, alias="job-category"),
+#         experience: int = Query(None, gt=0, lt=50)
+# ):
+#     global jobs
+#     keyword = keyword.lower()
+#     list = []
+#     try:
+#         for i in jobs:
+#             if keyword in i['about'].lower() and (category is None or i['category'] == category) and (
+#                     experience is None or i['experience'] == experience):
+#                 list.append(i)
+#     except Exception as e:
+#         return {"xatolik": e}
+#     return list
