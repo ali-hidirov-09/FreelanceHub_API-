@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from fastapi.params import Query
-from pydantic import BaseModel, field_validator, ConfigDict, Field
+from pydantic import BaseModel, field_validator, ConfigDict, Field,model_validator, SecretStr
 from pydantic.alias_generators import to_camel
 from typing import Annotated
 
@@ -15,72 +15,138 @@ class BaseSchema(BaseModel):
     )
 
 PositiveInt = Annotated[int, Field(gt=0)]
-MinStr = Annotated[str, Field(min_length=2, max_length=20)]
+PositiveFloat = Annotated[float, Field(gt=0)]
+MinStr = Annotated[str, Field(min_length=5, max_length=20)]
+
+#--------------------------------------------------------DAY_4--------------------------------------------------------------------
+#--------------------------------------------------------Vazifa--------------------------------------------------------------------
+class UserSchema(BaseSchema):
+    username: MinStr
+    is_active: bool = True
+    email: str
+    password: SecretStr
+
+    @field_validator('email')
+    @classmethod
+    def validate_email_format(cls, v:str):
+        if v.count("@") != 1:
+            raise ValueError("Email xato formatda kiritildi")
+        return v
 
 
-devs = [
-    {
-        "id": 1,
-        "category":"IT",
-        "title": "Python",
-        "full_name":"Ali Khidirov",
-        "experience": 1,
-        "salary": 600.0,
-        "description": "Men junior python developerman va kompaniya rivoji uchun hamma narsa qilishga tayyorman."
+class JobSchema(BaseSchema):
+    title: str = Field(..., min_length=10)
+    salary_min: PositiveFloat
+    salary_max: PositiveFloat
+
+
+    @model_validator(mode='after')
+    def validate_salary_range(self):
+        if self.salary_min > self.salary_max:
+            raise ValueError("salary_min salary_max dan katta bo'lishi mumkin emas!")
+        return self
+
+
+@router.post('/job')
+async def job_create(job:JobSchema):
+    jod_data = job.model_dump()
+    return {
+        "message": "Muvaffaqiyatli yaratildi",
+        "data": jod_data
     }
-]
-
-class Job(BaseSchema):
-    category: MinStr
-    title: MinStr
-    full_name: MinStr
-    experience: int = Field(..., ge=0)
-    salary: float = Field(..., ge=0.0)
-    description: str = Field(min_length=10)
-
-    @field_validator('title')
-    @classmethod
-    def is_title_has_python(cls, tit:str):
-        if "python" not in tit.lower():
-            raise  ValueError("Biz faqat Pythonchilarni yaxshi ko'ramiz!")
-        return tit.title()
 
 
-    @field_validator('full_name')
-    @classmethod
-    def full_name_must_be_alpha(cls, s:str):
-        title = s.replace(" ", "")
-        if not title.isalpha():
-            raise ValueError("Ism faqat xarflardan iborat bo'lishi kerak")
-        return s.title()
-
-    @field_validator('salary')
-    @classmethod
-    def salary_must_be_juft(cls, salar:float):
-        sala = int(salar)
-        if sala % 2 != 0:
-            raise ValueError("Faqat juft son kiritish mumkin")
-        return salar
-
-
-
-
-@router.post('/dev_create')
-async def dev_create(job: Job):
-    global devs
-    job_data = job.model_dump()
-    devs.append(job_data)
-    print(devs)
-    return {"message": "Muvaffaqiyatli yaratildi",
-            "data": job_data}
+@router.post('/user')
+async def user_create(user:UserSchema):
+    user_data = user.model_dump()
+    return {
+        "message": "Muvaffaqiyatli yaratildi",
+        "data": user_data
+    }
 
 
 
 
 
 
+#--------------------------------------------------------Dars--------------------------------------------------------------------
+
+# devs = [
+#     {
+#         "id": 1,
+#         "category":"IT",
+#         "title": "Python",
+#         "full_name":"Ali Khidirov",
+#         "experience": 1,
+#         "salary": 600.0,
+#         "description": "Men junior python developerman va kompaniya rivoji uchun hamma narsa qilishga tayyorman."
+#     }
+# ]
+#
+# class Job(BaseSchema):
+#     category: MinStr
+#     title: MinStr
+#     is_active: bool = True
+#     full_name: MinStr
+#     experience: int = Field(..., ge=0)
+#     salary: float = Field(..., ge=0.0)
+#     description: str
+#     created_at: MinStr
+#     updated_at: MinStr
+#
+#     @field_validator('title')
+#     @classmethod
+#     def is_title_has_python(cls, tit:str):
+#         if "python" not in tit.lower():
+#             raise  ValueError("Biz faqat Pythonchilarni yaxshi ko'ramiz!")
+#         return tit.title()
+#
+#
+#     @field_validator('full_name')
+#     @classmethod
+#     def full_name_must_be_alpha(cls, s:str):
+#         title = s.replace(" ", "")
+#         if not title.isalpha():
+#             raise ValueError("Ism faqat xarflardan iborat bo'lishi kerak")
+#         return s.title()
+#
+#     @field_validator('salary')
+#     @classmethod
+#     def salary_must_be_juft(cls, salar:float):
+#         sala = int(salar)
+#         if sala % 2 != 0:
+#             raise ValueError("Faqat juft son kiritish mumkin")
+#         return salar
+#
+#
+#     @model_validator(mode='after')
+#     def if_is_active_False(self):
+#         if self.is_active is False and self.description == "":
+#             raise ValueError("Description yozilishi shart")
+#         return self
+#
+#
+#
+#
+#
+#
+# @router.post('/dev_create')
+# async def dev_create(job: Job):
+#     global devs
+#     job_data = job.model_dump()
+#     devs.append(job_data)
+#     print(devs)
+#     return {"message": "Muvaffaqiyatli yaratildi",
+#             "data": job_data}
 
 
+
+
+
+
+
+#--------------------------------------------------------DAY_3--------------------------------------------------------------------
+#--------------------------------------------------------DARS + vazifa--------------------------------------------------------------------
 
 # jobs = [
 #     {
