@@ -3,6 +3,8 @@ from fastapi.params import Query
 from pydantic import BaseModel, field_validator, ConfigDict, Field,model_validator, SecretStr
 from pydantic.alias_generators import to_camel
 from typing import Annotated
+from app.schemas import JobResponse, JobCreate
+
 
 
 router = APIRouter()
@@ -17,6 +19,23 @@ class BaseSchema(BaseModel):
 PositiveInt = Annotated[int, Field(gt=0)]
 PositiveFloat = Annotated[float, Field(gt=0)]
 MinStr = Annotated[str, Field(min_length=5, max_length=20)]
+
+
+#--------------------------------------------------------DAY_5--------------------------------------------------------------------
+
+job_list = []
+
+
+@router.post("/create", response_model=JobResponse, status_code=201)
+async def job_create_2(job: JobCreate):
+    job_data = job.model_dump()
+    job_data["id"] = len(job_list) + 1
+    job_data["status"] = "Active"
+    job_data["secret"] = "******"
+    job_list.append(job_data)
+    print(job_list)
+    return job_data
+
 
 #--------------------------------------------------------DAY_4--------------------------------------------------------------------
 #--------------------------------------------------------Vazifa--------------------------------------------------------------------
@@ -48,7 +67,7 @@ class JobSchema(BaseSchema):
 
 
 @router.post('/job')
-async def job_create(job:JobSchema):
+async def job_create_1(job:JobSchema):
     jod_data = job.model_dump()
     return {
         "message": "Muvaffaqiyatli yaratildi",
@@ -57,7 +76,7 @@ async def job_create(job:JobSchema):
 
 
 @router.post('/user')
-async def user_create(user:UserSchema):
+async def user_create_1(user:UserSchema):
     user_data = user.model_dump()
     return {
         "message": "Muvaffaqiyatli yaratildi",
@@ -69,7 +88,7 @@ async def user_create(user:UserSchema):
 
 
 
-#--------------------------------------------------------Dars--------------------------------------------------------------------
+#--------------------------------------------------------Dars 4--------------------------------------------------------------------
 
 # devs = [
 #     {
