@@ -1,5 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 from fastapi.params import Query
+from starlette.status import HTTP_204_NO_CONTENT
+
+from .exceptions import ObjectNotFound
 from pydantic import BaseModel, field_validator, ConfigDict, Field,model_validator, SecretStr
 from pydantic.alias_generators import to_camel
 from typing import Annotated
@@ -20,6 +23,33 @@ PositiveInt = Annotated[int, Field(gt=0)]
 PositiveFloat = Annotated[float, Field(gt=0)]
 MinStr = Annotated[str, Field(min_length=5, max_length=20)]
 
+
+
+#--------------------------------------------------------DAY_7--------------------------------------------------------------------
+jobs = [
+    {"id": 1, "title": "Python Developer", "min_salary": 1000},
+    {"id": 2, "title": "JS Developer", "min_salary": 1500}
+
+]
+
+
+@router.get("/job/{job_id}")
+async def get_job_id(job_id: PositiveInt):
+    for i in jobs:
+        if i["id"] == job_id:
+            return i
+    else:
+        raise ObjectNotFound(model_name="jobs",obj_id=job_id, status_code=404)
+
+
+@router.delete("/job/{job_id}", status_code=HTTP_204_NO_CONTENT)
+async def delete_job(job_id:PositiveInt):
+    for index, job in enumerate(jobs):
+        if job["id"] == job_id:
+            jobs.pop(index)
+            return
+
+    raise ObjectNotFound(model_name="jobs", obj_id=job_id, status_code=410)
 
 #--------------------------------------------------------DAY_5--------------------------------------------------------------------
 
