@@ -1,6 +1,6 @@
 from .v1 import jobs
 from fastapi import APIRouter
-
+from .v1.exceptions import setup_exception_handlers
 api_router = APIRouter()
 
 
