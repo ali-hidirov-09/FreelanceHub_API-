@@ -242,20 +242,20 @@ async def user_create_1(user:UserSchema):
 # ]
 
 
-# @router.get("/search/")
-# async def get_jobs(
-#         keyword: str = Query(..., min_length=3),
-#         category: str = Query(None, alias="job-category"),
-#         experience: int = Query(None, gt=0, lt=50)
-# ):
-#     global jobs
-#     keyword = keyword.lower()
-#     list = []
-#     try:
-#         for i in jobs:
-#             if keyword in i['about'].lower() and (category is None or i['category'] == category) and (
-#                     experience is None or i['experience'] == experience):
-#                 list.append(i)
-#     except Exception as e:
-#         return {"xatolik": e}
-#     return list
+@router.get("/search/")
+async def get_jobs(
+        keyword: str = Query(..., min_length=3),
+        category: str = Query(None, alias="job-category"),
+        experience: int = Query(None, gt=0, lt=50)
+):
+    global jobs
+    keyword = keyword.lower()
+    list = []
+    try:
+        for i in jobs:
+            if keyword in i['about'].lower() and (category is None or i['category'] == category) and (
+                    experience is None or i['experience'] == experience):
+                list.append(i)
+    except Exception as e:
+        return {"xatolik": e}
+    return list

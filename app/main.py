@@ -1,6 +1,8 @@
 from fastapi import FastAPI
-from .routers import api_router, setup_exception_handlers
+from app.routers import api_router, setup_exception_handlers
 from fastapi.responses import RedirectResponse
+from app.database import engine, Base
+from app import models
 
 
 app = FastAPI(
@@ -58,6 +60,10 @@ app = FastAPI(
     # openapi version
     openapi_version="3.1.0"
 )
+
+
+Base.metadata.create_all(bind=engine)
+
 
 @app.get("/", include_in_schema=False)
 async def redirect_to_docs():
