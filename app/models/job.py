@@ -1,4 +1,4 @@
-from app.database import Base
+from app.core.database import Base
 from sqlalchemy import String, text, Text, Numeric, ForeignKey, Enum
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
@@ -15,7 +15,7 @@ class JobStatus(str, enum.Enum):
 class Job(Base):
     __tablename__ = "jobs"
 
-    id: Mapped[int] = mapped_column(primary_key=True,autoincrement=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(200), index=True)
     description: Mapped[str] = mapped_column(Text)
     category: Mapped[str] = mapped_column(String(100), index=True)

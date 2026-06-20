@@ -1,12 +1,16 @@
 from fastapi import APIRouter, HTTPException, status
-from fastapi.params import Query
-from starlette.status import HTTP_204_NO_CONTENT
-
-from .exceptions import ObjectNotFound
+from fastapi.params import Query, Depends
+from sqlalchemy import text
+from starlette.status import HTTP_204_NO_CONTENT, HTTP_404_NOT_FOUND
+from app.core.database import get_async_session
+from sqlalchemy.ext.asyncio import AsyncSession
+from .exceptions import ObjectNotFound, ServerError
 from pydantic import BaseModel, field_validator, ConfigDict, Field,model_validator, SecretStr
 from pydantic.alias_generators import to_camel
+from app.schemas import JobResponse, JobCreate, JobCreate1
 from typing import Annotated
-from app.schemas import JobResponse, JobCreate
+from app.repositories import JobRepository
+from app.models import Job
 
 
 
@@ -22,6 +26,42 @@ class BaseSchema(BaseModel):
 PositiveInt = Annotated[int, Field(gt=0)]
 PositiveFloat = Annotated[float, Field(gt=0)]
 MinStr = Annotated[str, Field(min_length=5, max_length=20)]
+
+
+#--------------------------------------------------------DAY_10--------------------------------------------------------------------
+@router.get("/get-by-id/{id}")
+async def get_job_bu_id(job_id: int, db: AsyncSession = Depends(get_async_session)):
+    repo = JobRepository(db)
+    job = await repo.get_by_id(job_id)
+    if job is None:
+        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Job topilmadi")
+    return job
+
+
+@router.get("/all-jobs")
+async def get_all_jobs(db: AsyncSession = Depends(get_async_session)):
+    repo = JobRepository(db)
+    jobs = await repo.get_all()
+    if len(jobs) == 0:
+        return HTTPException(status_code=200, detail = "Xozircha joblar mavjud emas")
+    return jobs
+
+
+
+
+
+#--------------------------------------------------------DAY_9--------------------------------------------------------------------
+@router.get("/get-db-version")
+async  def get_db_version(db: AsyncSession = Depends(get_async_session)):
+    try:
+        query = text("SELECT version();")
+        result = await db.execute(query)
+        version_string = result.scalar()
+        return {"postgresql_version": version_string}
+
+    except Exception:
+        raise ServerError(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, message="Serverda xatolik ketdi tuzatamiz yaqinda")
+
 
 
 
