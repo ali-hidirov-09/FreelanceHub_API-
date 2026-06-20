@@ -7,3 +7,8 @@ class ObjectNotFound(FreelanceHubError):
         self.obj_id = obj_id
         self.status_code = status_code
 
+
+class ServerError(FreelanceHubError):
+    def __init__(self, status_code: int, message: str):
+        self.message = message
+        self.status_code = status_code
