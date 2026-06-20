@@ -1,8 +1,24 @@
 from fastapi import FastAPI
 from app.routers import api_router, setup_exception_handlers
 from fastapi.responses import RedirectResponse
-from app.database import engine, Base
-from app import models
+from app.core.database import engine, Base
+from contextlib import asynccontextmanager
+import app.models
+
+
+async def init_models():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("DIQQAT: Bazada jadvallar yaratilyapti...")
+    await init_models()
+    print("MUVAFFAQIYAT: Jadvallar tayyor!")
+
+    yield
+
+    print("Tizim yopilyapti...")
 
 
 app = FastAPI(
@@ -15,6 +31,7 @@ app = FastAPI(
     - Jobs
     """,
     version="1.0.1",
+    lifespan=lifespan,
 
     # docs_url
     docs_url="/docs",
@@ -43,26 +60,11 @@ app = FastAPI(
     ],
 
 
-    # swagger ui settings
-    # swagger_ui_parameters={
-    #     "defaultModelsExpandDepth": -1,
-    #     "docExpansion": "list",
-    #     "displayRequestDuration": True,
-    #     "filter": True
-    # },
-
-    # deprecated api hide
     deprecated=False,
-
-    # root path (reverse proxy uchun)
     root_path="",
-
-    # openapi version
     openapi_version="3.1.0"
 )
 
-
-Base.metadata.create_all(bind=engine)
 
 
 @app.get("/", include_in_schema=False)
