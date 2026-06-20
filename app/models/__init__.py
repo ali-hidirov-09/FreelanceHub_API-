@@ -1,3 +1,3 @@
-from .jobs import Job
-from .users import User
+from .job import Job
+from .user import User
 

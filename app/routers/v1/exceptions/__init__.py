@@ -1,2 +1,2 @@
 from .setup import setup_exception_handlers
-from .exception import ObjectNotFound
+from .exception import ObjectNotFound, ServerError
