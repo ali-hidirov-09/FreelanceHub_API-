@@ -15,6 +15,7 @@ class JobStatus(str, enum.Enum):
 class Job(Base):
     __tablename__ = "jobs"
 
+    ali: Mapped[str] = mapped_column(String(1100))
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(200), index=True)
     description: Mapped[str] = mapped_column(Text)

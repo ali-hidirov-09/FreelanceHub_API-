@@ -1,24 +1,12 @@
 from fastapi import FastAPI
 from app.routers import api_router, setup_exception_handlers
 from fastapi.responses import RedirectResponse
-from app.core.database import engine, Base
 from contextlib import asynccontextmanager
-import app.models
 
-
-async def init_models():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("DIQQAT: Bazada jadvallar yaratilyapti...")
-    await init_models()
-    print("MUVAFFAQIYAT: Jadvallar tayyor!")
-
     yield
-
-    print("Tizim yopilyapti...")
 
 
 app = FastAPI(

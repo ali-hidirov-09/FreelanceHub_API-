@@ -28,6 +28,12 @@ PositiveFloat = Annotated[float, Field(gt=0)]
 MinStr = Annotated[str, Field(min_length=5, max_length=20)]
 
 
+#--------------------------------------------------------DAY_11--------------------------------------------------------------------
+
+
+
+
+
 #--------------------------------------------------------DAY_10--------------------------------------------------------------------
 @router.get("/get-by-id/{id}")
 async def get_job_bu_id(job_id: int, db: AsyncSession = Depends(get_async_session)):
