@@ -51,3 +51,6 @@ class JobRepository:
         await self.session.delete(job_data)
         await self.session.commit()
         return True
+
+
+

@@ -1,6 +1,6 @@
 from app.core.database import Base
 from sqlalchemy import String, text, Text, Numeric, ForeignKey, Enum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 import enum
 from decimal import Decimal
@@ -15,7 +15,6 @@ class JobStatus(str, enum.Enum):
 class Job(Base):
     __tablename__ = "jobs"
 
-    ali: Mapped[str] = mapped_column(String(1100))
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(200), index=True)
     description: Mapped[str] = mapped_column(Text)
@@ -27,3 +26,12 @@ class Job(Base):
     deadline: Mapped[datetime | None] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(server_default=text("CURRENT_TIMESTAMP"))
 
+    user: Mapped["User"] = relationship(back_populates="jobs")
+
+    def __repr__(self):
+        return f"""
+        id: {self.id},
+        title: {self.title},
+        deadline: {self.deadline},
+        posted_by_id: {self.posted_by_id},
+        category: {self.category},"""
