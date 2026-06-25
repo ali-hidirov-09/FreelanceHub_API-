@@ -7,10 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .exceptions import ObjectNotFound, ServerError
 from pydantic import BaseModel, field_validator, ConfigDict, Field,model_validator, SecretStr
 from pydantic.alias_generators import to_camel
-from app.schemas import JobResponse, JobCreate, JobCreate1
+from app.schemas import JobResponse, JobCreate
 from typing import Annotated
 from app.repositories import JobRepository
-from app.models import Job
 
 
 
