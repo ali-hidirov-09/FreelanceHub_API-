@@ -44,7 +44,12 @@ app = FastAPI(
         {
             "name": "Jobs",
             "description": "Job management"
-        }
+        },
+        {
+            "name": "Auth",
+            "description": "Auth management"
+        },
+
     ],
 
 
