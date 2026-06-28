@@ -2,6 +2,9 @@ from fastapi import FastAPI
 from app.routers import api_router, setup_exception_handlers
 from fastapi.responses import RedirectResponse
 from contextlib import asynccontextmanager
+from fastapi.security import OAuth2PasswordBearer
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 @asynccontextmanager
