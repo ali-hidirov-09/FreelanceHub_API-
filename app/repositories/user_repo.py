@@ -1,5 +1,4 @@
 from typing import Optional, Any
-
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -34,6 +33,11 @@ class UserRepository:
 
     async def get_user_by_email(self, email: str) -> Optional[User]:
         query = select(User).filter(User.email == email)
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def get_user_by_id(self, user_id: int) -> Optional[User]:
+        query = select(User).filter(User.id == user_id)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
