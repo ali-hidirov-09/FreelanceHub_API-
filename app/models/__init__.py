@@ -1,3 +1,4 @@
 from .job import Job
 from .user import User, Role
+from .token import RefreshToken
 
