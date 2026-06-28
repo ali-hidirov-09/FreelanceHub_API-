@@ -1,21 +1,22 @@
 from typing import Optional, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.models import Job
 
 
 class JobRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-
+    from app.models import Job
     async def get_all(self) -> list[Job]:
+        from app.models import Job
         query = select(Job)
         results = await self.session.execute(query)
         return list(results.scalars().all())
 
 
     async def get_by_id(self, job_id: int) -> Optional[Job]:
+        from app.models import Job
         query = select(Job).where(Job.id == job_id)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
