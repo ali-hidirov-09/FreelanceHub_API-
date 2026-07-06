@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import Annotated
 from pydantic.alias_generators import to_camel
-from app.models.job import JobStatus
+from app.models import JobStatus
 from datetime import datetime
 
 MinStr = Annotated[str, Field(min_length=3)]
@@ -31,14 +31,18 @@ class JobCreate1(BaseSchema):
 
 
 class JobCreate(BaseSchema):
+    category: MinStr
     title: MinStr
     description: str = Field(..., min_length=10)
     salary: float = Field(..., gt=0)
+    salary_currency: str = Field(min_length=2, default="USD")
+    status: JobStatus = JobStatus.OPEN
+    deadline: datetime
 
     @field_validator('title')
     @classmethod
     def validate_title(cls, v:str):
-        if not v.isalpha():
+        if not v.replace(" ", "").isalpha():
             raise ValueError("Faqat xarflar kiritilishi shart")
         return v.title()
 
@@ -51,14 +55,20 @@ class JobResponse(BaseModel):
         extra='ignore'
     )
     id: int = Field(..., gt=0)
+    category: MinStr
     title: MinStr
     description: str = Field(..., min_length=10)
     salary: float = Field(..., gt=0)
-    status: str = "Active"
+    salary_currency: str = Field(min_length=2, default="USD")
+    status: JobStatus = JobStatus.OPEN
+    posted_by_id: int = Field(gt=0)
+    deadline: datetime
+
+    created_at: datetime
 
     @field_validator('title')
     @classmethod
     def validate_title(cls, v: str):
-        if not v.isalpha():
+        if not v.replace(" ", "").isalpha():
             raise ValueError("Faqat xarflar kiritilishi shart")
         return v.title()
