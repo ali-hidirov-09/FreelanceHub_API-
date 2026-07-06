@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Path
 from fastapi.params import Query, Depends
 from sqlalchemy import text
 from starlette.status import HTTP_204_NO_CONTENT, HTTP_404_NOT_FOUND
@@ -10,7 +10,8 @@ from pydantic.alias_generators import to_camel
 from app.schemas import JobResponse, JobCreate
 from typing import Annotated
 from app.repositories import JobRepository
-
+from app.core.dependencies import require_role
+from app.models import User, Role
 
 
 router = APIRouter()
@@ -27,7 +28,34 @@ PositiveFloat = Annotated[float, Field(gt=0)]
 MinStr = Annotated[str, Field(min_length=5, max_length=20)]
 
 
-#--------------------------------------------------------DAY_12--------------------------------------------------------------------
+#--------------------------------------------------------DAY_15--------------------------------------------------------------------
+@router.post("/jobs",response_model=JobResponse, status_code=201)
+async def create_job(
+        job_data: JobCreate,
+        db: AsyncSession = Depends(get_async_session),
+        current_user: User = Depends(require_role([Role.ADMIN, Role.EMPLOYER]))
+):
+    repo = JobRepository(db)
+    job = await repo.create_job(schema=job_data, owner_id=current_user.id)
+    return job
+
+
+@router.delete("/jobs/{job_id}", status_code=204)
+async def delete_job(
+        job_id: int = Path(gt=0),
+        db: AsyncSession = Depends(get_async_session),
+        current_user: User = Depends(require_role([Role.ADMIN, Role.EMPLOYER]))
+):
+    repo = JobRepository(db)
+    job = await repo.get_job_by_id(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Bunday job bazda yo'q")
+
+    if current_user.role != Role.ADMIN and job.posted_by_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Sizga bu ishni amalga oshirish uchun sizga ruxsat yo'q")
+
+    await repo.delete_job(job_id)
+
 
 
 
@@ -37,7 +65,7 @@ MinStr = Annotated[str, Field(min_length=5, max_length=20)]
 @router.get("/get-by-id/{id}")
 async def get_job_bu_id(job_id: int, db: AsyncSession = Depends(get_async_session)):
     repo = JobRepository(db)
-    job = await repo.get_by_id(job_id)
+    job = await repo.get_job_by_id(job_id)
     if job is None:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Job topilmadi")
     return job
@@ -46,7 +74,7 @@ async def get_job_bu_id(job_id: int, db: AsyncSession = Depends(get_async_sessio
 @router.get("/all-jobs")
 async def get_all_jobs(db: AsyncSession = Depends(get_async_session)):
     repo = JobRepository(db)
-    jobs = await repo.get_all()
+    jobs = await repo.get_all_jobs()
     if len(jobs) == 0:
         return HTTPException(status_code=200, detail = "Xozircha joblar mavjud emas")
     return jobs

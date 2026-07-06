@@ -10,6 +10,12 @@ class UserRepository:
     def __init__(self,session: AsyncSession):
         self.session = session
 
+    async def get_all_users(self):
+        query = select(User)
+        results = await self.session.execute(query)
+        return list(results.scalars().all())
+
+
     async def create_user(self, user_data) -> User:
         new_user = User(**user_data)
         self.session.add(new_user)
@@ -35,6 +41,7 @@ class UserRepository:
         query = select(User).filter(User.email == email)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
+
 
     async def get_user_by_id(self, user_id: int) -> Optional[User]:
         query = select(User).filter(User.id == user_id)
