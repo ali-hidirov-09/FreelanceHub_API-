@@ -2,6 +2,7 @@ from pydantic import EmailStr, BaseModel, ConfigDict, Field, field_validator
 from pydantic.alias_generators import to_camel
 import re
 from app.models.user import Role
+from datetime import datetime
 
 class BaseSchema(BaseModel):
     model_config = ConfigDict(
@@ -9,6 +10,7 @@ class BaseSchema(BaseModel):
         populate_by_name=True,
         extra='forbid'
     )
+
 
 class UserCreate(BaseSchema):
     email: EmailStr
@@ -29,8 +31,10 @@ class UserCreate(BaseSchema):
         if not re.search(r"[A-Z]", value) and not re.search(r"[a-z]", value):
             raise ValueError("Parolda kamida bitta katta xarf (A-Z) yoki kamida bitta kichik xarf (a-z) bo'lishi shart")
         if not re.search(r"\d", value) and not re.search(r"[!@#$%^&*_]", value):
-            raise ValueError("Parolda kamida bitta raqam (0-9) yoki kamida bitta maxsus belgi (!, @, #, $, %, ^, &, *, _) bo'lishi shart")
+            raise ValueError(
+                "Parolda kamida bitta raqam (0-9) yoki kamida bitta maxsus belgi (!, @, #, $, %, ^, &, *, _) bo'lishi shart")
         return value
+
 
 class UserResponse(BaseModel):
     model_config = ConfigDict(
@@ -39,15 +43,15 @@ class UserResponse(BaseModel):
         extra="ignore"
     )
     id: int = Field(gt=0)
-    role: Role = Role.FREELANCER
     full_name: str = Field(min_length=3)
     email: EmailStr
+    role: Role = Role.FREELANCER
     is_active: bool = True
+    created_at: datetime
+
 
 class SignUpResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str
     user: UserResponse
-
-

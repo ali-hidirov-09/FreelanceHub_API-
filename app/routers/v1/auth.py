@@ -5,11 +5,12 @@ from fastapi.security import OAuth2PasswordRequestForm
 from starlette.status import HTTP_401_UNAUTHORIZED
 from app.repositories import UserRepository, RefreshTokenRepository
 from app.core.database import get_async_session
-from app.core.security import Hasher, create_access_token, get_current_user,create_refresh_token, ALGORITHM, REFRESH_TOKEN_EXPIRE_DAYS
+from app.core.security import Hasher, create_access_token,create_refresh_token, ALGORITHM, REFRESH_TOKEN_EXPIRE_DAYS
 from app.schemas import UserCreate, SignUpResponse
 from app.models import RefreshToken
 from datetime import datetime, timezone, timedelta
 from app.models import User
+from app.core.dependencies import get_current_user
 import os
 from dotenv import load_dotenv
 load_dotenv()

@@ -13,6 +13,7 @@ from app.core.database import Base
 
 from dotenv import load_dotenv
 import os
+import alembic_postgresql_enum
 load_dotenv()
 
 # this is the Alembic Config object, which provides
