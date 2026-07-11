@@ -3,7 +3,7 @@ from app.routers import api_router, setup_exception_handlers
 from fastapi.responses import RedirectResponse
 from contextlib import asynccontextmanager
 from fastapi.security import OAuth2PasswordBearer
-
+from app.middleware import init_middleware
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
@@ -41,7 +41,6 @@ app = FastAPI(
         "identifier": "MIT"
     },
 
-
     # swagger tags order / groups
     openapi_tags=[
         {
@@ -55,18 +54,15 @@ app = FastAPI(
 
     ],
 
-
     deprecated=False,
     root_path="",
     openapi_version="3.1.0"
 )
 
-
-
 @app.get("/", include_in_schema=False)
 async def redirect_to_docs():
     return RedirectResponse(url='/docs')
 
-
+init_middleware(app)
 setup_exception_handlers(app=app)
 app.include_router(api_router, prefix="/api/v1")

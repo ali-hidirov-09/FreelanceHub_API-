@@ -48,7 +48,7 @@ class JobCreate(BaseSchema):
 
 
 
-class JobResponse(BaseModel):
+class JobResponseData(BaseModel):
     model_config = ConfigDict(
         alias_generator=to_camel,
         populate_by_name=True,
@@ -72,3 +72,13 @@ class JobResponse(BaseModel):
         if not v.replace(" ", "").isalpha():
             raise ValueError("Faqat xarflar kiritilishi shart")
         return v.title()
+
+
+class JobResponse(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+        extra='ignore'
+    )
+    data: JobResponseData
+    message: str

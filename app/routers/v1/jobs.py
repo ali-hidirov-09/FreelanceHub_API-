@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Path
+from fastapi import APIRouter, HTTPException, status, Path, BackgroundTasks
 from fastapi.params import Query, Depends
 from sqlalchemy import text
 from starlette.status import HTTP_204_NO_CONTENT, HTTP_404_NOT_FOUND
@@ -12,7 +12,7 @@ from typing import Annotated
 from app.repositories import JobRepository
 from app.core.dependencies import require_role
 from app.models import User, Role
-
+from app.tasks import send_email
 
 router = APIRouter()
 
@@ -28,16 +28,33 @@ PositiveFloat = Annotated[float, Field(gt=0)]
 MinStr = Annotated[str, Field(min_length=5, max_length=20)]
 
 
-#--------------------------------------------------------DAY_15--------------------------------------------------------------------
+
+#-------------------------------------------------------- DAY_15, 16 --------------------------------------------------------------------
+def log_job_creation(schema: JobCreate):
+    job_data = schema.model_dump()
+    title = job_data["title"]
+    print(f"[Fast Api Background] yangi ish yaratildi: {title} ")
+
+
 @router.post("/jobs",response_model=JobResponse, status_code=201)
 async def create_job(
         job_data: JobCreate,
+        background_tasks: BackgroundTasks,
         db: AsyncSession = Depends(get_async_session),
-        current_user: User = Depends(require_role([Role.ADMIN, Role.EMPLOYER]))
+        current_user: User = Depends(require_role([Role.ADMIN, Role.EMPLOYER])),
 ):
+
     repo = JobRepository(db)
     job = await repo.create_job(schema=job_data, owner_id=current_user.id)
-    return job
+
+    background_tasks.add_task(log_job_creation, job_data)
+
+    send_email.delay(job_data.model_dump())
+
+    return {
+        "data": job,
+        "message": "ish o'rni yaratildi, freelancerlarga bildirishnoma yuborildi "
+            }
 
 
 @router.delete("/jobs/{job_id}", status_code=204)
