@@ -11,7 +11,7 @@ class FreelancerProfiles(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True)
-    full_name: Mapped[str] = mapped_column(String(100))
+    # full_name: Mapped[str] = mapped_column(String(100))
     bio: Mapped[str] = mapped_column(Text, nullable=True)
     skills: Mapped[list[str]] = mapped_column(ARRAY(String))
     hourly_rate: Mapped[Decimal] = mapped_column(Numeric(10,2), nullable=True)
