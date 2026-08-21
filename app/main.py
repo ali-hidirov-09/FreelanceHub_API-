@@ -1,15 +1,25 @@
 from fastapi import FastAPI
+from sqlalchemy.util import await_only
+
 from app.routers import api_router, setup_exception_handlers
 from fastapi.responses import RedirectResponse
 from contextlib import asynccontextmanager
 from fastapi.security import OAuth2PasswordBearer
 from app.middleware import init_middleware
+from app.core.redis_client import redis_manager
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await redis_manager.connect()
+    print("Redis connected succesfully")
+
     yield
+
+    await redis_manager.disconnect()
+    print("Redis disconnected succesfully")
 
 
 app = FastAPI(

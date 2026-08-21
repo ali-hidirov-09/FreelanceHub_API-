@@ -8,11 +8,16 @@ from .exceptions import ObjectNotFound, ServerError
 from pydantic import BaseModel, field_validator, ConfigDict, Field,model_validator, SecretStr
 from pydantic.alias_generators import to_camel
 from app.schemas import JobResponse, JobCreate
-from typing import Annotated
+from typing import Annotated, Any
 from app.repositories import JobRepository
 from app.core.dependencies import require_role
 from app.models import User, Role
 from app.tasks import send_email
+import json
+import random
+from redis import asyncio as aioredis
+from fastapi.encoders import jsonable_encoder
+from app.core.redis_client import redis_manager
 
 router = APIRouter()
 
@@ -26,6 +31,110 @@ class BaseSchema(BaseModel):
 PositiveInt = Annotated[int, Field(gt=0)]
 PositiveFloat = Annotated[float, Field(gt=0)]
 MinStr = Annotated[str, Field(min_length=5, max_length=20)]
+
+
+# ---------------------------------------------------------Dars_18------------------------------------------------------------------
+
+async def get_redis_db() -> aioredis.Redis:
+    return await redis_manager.get_client()
+
+async def get_cached(redis: aioredis.Redis, key: str) -> Any | None:
+    try:
+        data = await redis.get(key)
+        if data:
+            return json.loads(data)
+    except Exception as e:
+        print(f"[CACHE GET ERROR] Key: {key}, Error: {e}")
+    return None
+
+
+async def set_cached(redis: aioredis.Redis, key: str, value: Any, base_ttl: int = 60) -> None:
+    try:
+        jitter = random.randint(-10, 10)
+        final_ttl = base_ttl + jitter
+        await redis.set(key, json.dumps(value), ex=final_ttl)
+    except Exception as e:
+        print(f"[CACHE SET ERROR] Key: {key}, Error: {e}")
+
+
+@router.get("/get-all-jobs", status_code=200)
+async def get_all_jobs(
+        redis: Annotated[aioredis.Redis, Depends(get_redis_db)],
+        db: AsyncSession = Depends(get_async_session)
+    ):
+
+    cache_key = "data:heavy_jobs"
+
+    cached_data = await get_cached(redis, cache_key)
+
+    if cached_data is not None:
+        print("[ROUTER] Kesh HIT! Ma'lumot keshdan o'qildi.")
+        return cached_data
+
+    print("[ROUTER] Kesh MISS! Bazadan haqiqiy SQL so'rov bilan o'qilmoqda...")
+
+    repo = JobRepository(db)
+    all_jobs = await repo.get_all_jobs()
+
+    serializable_data = jsonable_encoder(all_jobs)
+
+    await set_cached(redis, cache_key, serializable_data, base_ttl=60)
+
+    return serializable_data
+
+
+
+@router.post("/new_job", status_code=201)
+async def create_new_job(
+        job_data: JobCreate,
+        redis: Annotated[aioredis.Redis, Depends(get_redis_db)],
+        db: AsyncSession = Depends(get_async_session),
+        current_user: User = Depends(require_role([Role.ADMIN, Role.EMPLOYER])),
+):
+
+    cache_key = "data:heavy_jobs"
+
+    repo = JobRepository(db)
+    job = await repo.create_job(schema=job_data, owner_id=current_user.id)
+
+    try:
+        await redis.delete(cache_key)
+        print(f"[CACHE INVALIDATED] '{cache_key}' mantiqan eskirgani uchun Redisdan o'chirildi!")
+    except Exception as e:
+        print(f"[REDIS ERROR] Keshni o'chirishda xato yuz berdi: {e}")
+
+
+
+    return {
+        "data": job,
+        "message": "ish o'rni yaratildi, freelancerlarga bildirishnoma yuborildi "
+            }
+
+
+@router.delete("/jobs/{job_id}", status_code=204)
+async def delete_job(
+        redis: Annotated[aioredis.Redis, Depends(get_redis_db)],
+        job_id: int = Path(gt=0),
+        db: AsyncSession = Depends(get_async_session),
+        current_user: User = Depends(require_role([Role.ADMIN, Role.EMPLOYER]))
+):
+    cache_key = "data:heavy_jobs"
+
+    repo = JobRepository(db)
+    job = await repo.get_job_by_id(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Bunday job bazda yo'q")
+
+    if current_user.role != Role.ADMIN and job.posted_by_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Sizga bu ishni amalga oshirish uchun sizga ruxsat yo'q")
+
+    try:
+        await redis.delete(cache_key)
+        print(f"[CACHE INVALIDATED] '{cache_key}' mantiqan eskirgani uchun Redisdan o'chirildi!")
+    except Exception as e:
+        print(f"[REDIS ERROR] Keshni o'chirishda xato yuz berdi: {e}")
+
+    await repo.delete_job(job_id)
 
 
 
